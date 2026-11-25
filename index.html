@@ -36,7 +36,7 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   <p>MODEL FIBONACCI AUTO CALIBRÉ - SCALPING 5-15 MIN</p>
 </div>
 
-<div class="badge">V30 - Volatility + Boom + Step - Tu envoies capture, BAMM Fibo.</div>
+<div class="badge">V30 FIX - Même prix = Même direction - Plus de hasard</div>
 
 <div class="card">
   <label>PAIRE</label>
@@ -56,7 +56,7 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   </select>
 
   <label>PRIX ACTUEL</label>
-  <input type="number" id="price" placeholder="Ex: V75 (1s): 1875.20" step="any">
+  <input type="number" id="price" placeholder="Ex: V50 (1s): 222135.61" step="any">
 
   <label>UPLOAD TA CAPTURE - LE ROBOT FAIT TOUT LE FIBO TOUT SEUL</label>
   <div class="upload" onclick="document.getElementById('file').click()">
@@ -95,13 +95,12 @@ const names = {
   BOOM600: 'Boom 600 Index',
   STEP: 'Step Index'
 };
-// Calibration V30
 const config = {
-  V50:  { step: 10,  lot: 0.02, risk: 6,  tp: 12, bias: 'both' },
-  V75:  { step: 18,  lot: 0.02, risk: 7,  tp: 14, bias: 'both' },
-  V100: { step: 24,  lot: 0.02, risk: 9,  tp: 18, bias: 'both' },
-  BOOM600: { step: 15, lot: 0.02, risk: 8, tp: 16, bias: 'buy' }, // Boom = spike haut, on privilégie BUY
-  STEP: { step: 8, lot: 0.02, risk: 5, tp: 10, bias: 'both' } // Step = paliers propres, SL serré
+  V50:  { step: 10, lot: 0.02, risk: 6, tp: 12, bias: 'both' },
+  V75:  { step: 18, lot: 0.02, risk: 7, tp: 14, bias: 'both' },
+  V100: { step: 24, lot: 0.02, risk: 9, tp: 18, bias: 'both' },
+  BOOM600: { step: 15, lot: 0.02, risk: 8, tp: 16, bias: 'buy' },
+  STEP: { step: 8, lot: 0.02, risk: 5, tp: 10, bias: 'both' }
 };
 
 function setPair(p, btn){
@@ -131,14 +130,21 @@ function getFibo(){
   if(!price){ alert('Mets le prix actuel d\'abord !'); return; }
   let c = config[currentPair];
   let name = names[currentPair];
-  // Logique V30 : Boom 600 = 80% BUY, les autres = 50/50
-  let isBuy = c.bias==='buy' ? (Math.random() > 0.2) : (Math.random() > 0.5);
+  // V30 FIX - PLUS DE MATH.RANDOM
+  // Même prix = même direction, toujours.
+  // On utilise le prix lui-même pour décider.
+  let reste = price % 100;
+  let isBuy;
+  if(c.bias === 'buy'){
+    isBuy = true;
+  } else {
+    isBuy = reste < 50;
+  }
   let dir = isBuy ? 1 : -1;
   let entry = price;
   let sl = entry - (dir * c.step);
   let tp1 = entry + (dir * c.step * 1.272);
   let tp2 = entry + (dir * c.step * 1.618);
-
   document.getElementById('direction').innerHTML = isBuy ? '🟢 BUY - FIBO BAS → HAUT' : '🔴 SELL - FIBO HAUT → BAS';
   document.getElementById('direction').style.color = isBuy ? '#00e676' : '#ff5252';
   document.getElementById('bar').style.width = '100%';
