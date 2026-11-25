@@ -16,6 +16,8 @@ label{font-size:12px;color:#aaa}
 select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid #ff8c00;border-radius:10px;margin:6px 0 12px;font-size:16px}
 .btn-pair{background:#ff8c00;color:#000;border:none;padding:9px 12px;border-radius:20px;font-weight:bold;margin:4px 4px 0 0;font-size:13px}
 .btn-pair.active{background:#fff}
+.marge-btn{background:#222;color:#fff;border:1px solid #444;padding:10px 14px;border-radius:20px;font-weight:bold;margin:4px 4px 0 0;font-size:13px}
+.marge-btn.active{background:#ff8c00;color:#000}
 .upload{border:2px dashed #ff8c00;border-radius:12px;padding:16px;text-align:center;color:#ccc;font-size:13px}
 .upload img{max-width:100%;border-radius:10px;margin-top:8px}
 .bar{height:8px;background:#222;border-radius:10px;overflow:hidden;margin:8px 0}
@@ -40,7 +42,7 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   <p>MODEL FIBONACCI AUTO CALIBRÉ - NORMAL</p>
 </div>
 
-<div class="badge">V30 - NORMAL - M5 / M15 - Avec Marge de Sécurité</div>
+<div class="badge">V30 - NORMAL - M5 / M15 - Marge Réglable - Prends ton temps</div>
 
 <div class="card">
   <label>PAIRE</label>
@@ -60,7 +62,15 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   </select>
 
   <label>PRIX ACTUEL</label>
-  <input type="number" id="price" placeholder="Ex: V50 (1s): 221817.94" step="any">
+  <input type="number" id="price" placeholder="Ex: V50 (1s): 221980.70" step="any">
+
+  <label>🛡️ CHOISIS TA MARGE - COMBIEN DE TEMPS TU VEUX POUR PLACER ?</label>
+  <div>
+    <button class="marge-btn" onclick="setMarge(10,this)">10 pts - Rapide (2 min)</button>
+    <button class="marge-btn active" onclick="setMarge(25,this)">25 pts - Normal (5-10 min)</button>
+    <button class="marge-btn" onclick="setMarge(40,this)">40 pts - Tranquille (15 min)</button>
+  </div>
+  <div class="small" style="margin-top:8px">Si c'est encore rapide pour toi, choisis 40 pts. Tu auras 15 min pour placer.</div>
 
   <label>UPLOAD TA CAPTURE</label>
   <div class="upload" onclick="document.getElementById('file').click()">
@@ -77,7 +87,7 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
 
 <div class="marge-box">
   <b style="color:#ff8c00">🛡️ MARGE DE SÉCURITÉ ACTIVÉE</b><br>
-  <span id="margeInfo" style="font-size:13px">Tu as 2-3 min pour placer ton ordre tranquille.<br>Le prix doit venir te chercher, ce n'est plus toi qui cours après le prix.</span>
+  <span id="margeInfo" style="font-size:13px">Choisis 25 ou 40 pts. Tu as le temps de placer tranquille.<br>Le prix doit venir te chercher, ce n'est plus toi qui cours après le prix.</span>
 </div>
 
 <div class="conf-box">
@@ -101,11 +111,12 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
 <div class="card" style="text-align:center">
   <b style="color:#ff8c00">LOT : 0,02 UNIQUEMENT</b><br>
   <span class="small" id="lotinfo">V50 (1s) : Normal<br>Durée : 30 min à 1h</span><br>
-  <span class="small" style="color:#ff8c00;font-weight:bold">⚠️ DANS MT5 : Choisis ORDRE EN ATTENTE - Buy Limit / Sell Limit - Mets Entrée + SL + TP en même temps, puis Placer.</span>
+  <span class="small" style="color:#ff8c00;font-weight:bold">⚠️ DANS MT5 : ORDRE EN ATTENTE - Buy Limit / Sell Limit - Mets Entrée + SL + TP en même temps, puis Placer.</span>
 </div>
 
 <script>
 let currentPair = 'V50';
+let currentMarge = 25;
 const names = {
   V50: 'V50 (1s)',
   V75: 'V75 (1s)',
@@ -113,16 +124,18 @@ const names = {
   BOOM600: 'Boom 600 Index',
   STEP: 'Step Index'
 };
-// V30 NORMAL + MARGE
-// marge = distance de sécurité pour avoir le temps de placer
 const config = {
-  V50:  { step: 20, marge: 8, lot: 0.02, bias: 'both' },
-  V75:  { step: 35, marge: 12, lot: 0.02, bias: 'both' },
-  V100: { step: 45, marge: 15, lot: 0.02, bias: 'both' },
-  BOOM600: { step: 30, marge: 10, lot: 0.02, bias: 'buy' },
-  STEP: { step: 18, marge: 6, lot: 0.02, bias: 'both' }
+  V50:  { step: 20, lot: 0.02, bias: 'both' },
+  V75:  { step: 35, lot: 0.02, bias: 'both' },
+  V100: { step: 45, lot: 0.02, bias: 'both' },
+  BOOM600: { step: 30, lot: 0.02, bias: 'buy' },
+  STEP: { step: 18, lot: 0.02, bias: 'both' }
 };
-
+function setMarge(m, btn){
+  currentMarge = m;
+  document.querySelectorAll('.marge-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
 function setPair(p, btn){
   currentPair = p;
   document.getElementById('pair').value = p;
@@ -151,11 +164,7 @@ function getFibo(){
   let name = names[currentPair];
   let reste = price % 100;
   let isBuy;
-  if(c.bias === 'buy'){
-    isBuy = true;
-  } else {
-    isBuy = reste < 50;
-  }
+  if(c.bias === 'buy'){ isBuy = true; } else { isBuy = reste < 50; }
   let distance = Math.abs(reste - 50);
   let conf = 62 + Math.floor((distance / 50) * 30);
   if(currentPair === 'STEP') conf = conf + 3;
@@ -166,14 +175,9 @@ function getFibo(){
   if(conf >= 85){ confText = '🟢 TRÈS FORT - TU PEUX PRENDRE'; confColor = '#00e676'; }
   else if(conf >= 70){ confText = '🟡 FORT - TU PEUX PRENDRE'; confColor = '#ffeb3b'; }
   else { confText = '🔴 MOYEN - ATTENDS LE PROCHAIN FIBO'; confColor = '#ff5252'; }
-
   let dir = isBuy ? 1 : -1;
-  // --- MARGE DE SÉCURITÉ ---
-  // AVANT : entry = price (trop rapide, tu n'as pas le temps)
-  // MAINTENANT : entry = price - dir * marge
-  // BUY : entry = prix - 8 -> le prix doit descendre pour te toucher, tu as le temps
-  // SELL : entry = prix + 8 -> le prix doit monter pour te toucher, tu as le temps
-  let entry = price - (dir * c.marge);
+  // MARGE RÉGLABLE PAR TOI - 10 / 25 / 40
+  let entry = price - (dir * currentMarge);
   let sl = entry - (dir * c.step);
   let tp1 = entry + (dir * c.step * 1.272);
   let tp2 = entry + (dir * c.step * 1.618);
@@ -184,14 +188,14 @@ function getFibo(){
   document.getElementById('sl').innerText = sl.toFixed(2);
   document.getElementById('tp1').innerText = tp1.toFixed(2);
   document.getElementById('tp2').innerText = tp2.toFixed(2);
-  document.getElementById('margeInfo').innerHTML = 'Prix actuel : ' + price.toFixed(2) + ' → Entrée avec marge : ' + entry.toFixed(2) + ' (' + (isBuy ? '-' : '+') + c.marge + ' pts)<br>Tu as 2-3 min pour placer. Le prix doit venir te chercher.';
+  document.getElementById('margeInfo').innerHTML = 'Prix actuel : ' + price.toFixed(2) + ' → Entrée avec marge : ' + entry.toFixed(2) + ' (' + (isBuy ? '-' : '+') + currentMarge + ' pts)<br>Avec ' + currentMarge + ' pts, tu as le temps. Le prix doit venir te chercher.';
   document.getElementById('conf').innerText = conf + ' %';
   document.getElementById('conf').style.color = confColor;
   document.getElementById('confLabel').innerText = confText;
   document.getElementById('confLabel').style.color = confColor;
   document.getElementById('confBar').style.width = conf + '%';
   document.getElementById('confBar').style.background = confColor;
-  document.getElementById('info').innerText = 'V30 ' + name + ' - NORMAL - Lot 0.02 - Durée 30 min à 1h - Marge ' + c.marge + ' pts.';
+  document.getElementById('info').innerText = 'V30 ' + name + ' - NORMAL - Lot 0.02 - Marge ' + currentMarge + ' pts.';
   document.getElementById('ratio').innerText = 'RATIO 1 : 2 - ' + (isBuy ? 'BUY' : 'SELL') + ' - ' + name + ' - Confiance ' + conf + '%';
 }
 updatePair();
