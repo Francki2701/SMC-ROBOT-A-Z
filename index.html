@@ -27,16 +27,19 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
 .box div{font-size:20px;font-weight:bold;margin-top:4px}
 .small{font-size:11px;color:#aaa;text-align:center;margin-top:6px}
 .ratio{text-align:center;font-weight:bold;color:#00e676;margin:8px 0}
+.conf-box{background:#0a0a0a;border:2px solid #00e676;border-radius:14px;padding:14px;text-align:center;margin:12px 0}
+.conf-big{font-size:38px;font-weight:bold;color:#00e676}
+.conf-label{font-size:13px;font-weight:bold}
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>TRADE PREDICTIONS</h1>
-  <p>MODEL FIBONACCI AUTO CALIBRÉ - SCALPING 5-15 MIN</p>
+  <p>MODEL FIBONACCI AUTO CALIBRÉ - NORMAL</p>
 </div>
 
-<div class="badge">V30 FIX - Même prix = Même direction - Plus de hasard</div>
+<div class="badge">V30 - NORMAL - M5 / M15 - Confiance Fibo</div>
 
 <div class="card">
   <label>PAIRE</label>
@@ -58,9 +61,9 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   <label>PRIX ACTUEL</label>
   <input type="number" id="price" placeholder="Ex: V50 (1s): 222135.61" step="any">
 
-  <label>UPLOAD TA CAPTURE - LE ROBOT FAIT TOUT LE FIBO TOUT SEUL</label>
+  <label>UPLOAD TA CAPTURE</label>
   <div class="upload" onclick="document.getElementById('file').click()">
-    📸 Clique pour uploader ta capture M1 / M5
+    📸 Clique pour uploader ta capture M5 / M15
     <input type="file" id="file" accept="image/*" hidden onchange="preview(event)">
     <div id="preview"></div>
   </div>
@@ -71,8 +74,16 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   <div class="small" id="info">En attente de prix...</div>
 </div>
 
+<div class="conf-box">
+  <b style="color:#ff8c00">CONFIANCE DE L'ANALYSE</b>
+  <div class="conf-big" id="conf">-- %</div>
+  <div class="conf-label" id="confLabel">En attente...</div>
+  <div class="bar"><div id="confBar"></div></div>
+  <div class="small">85%+ = Très fort ✅ | 70-84% = Fort ✅ | 60-69% = Attends le prochain ❌</div>
+</div>
+
 <button class="bigbtn" onclick="getFibo()">GET NEXT FIBO</button>
-<div class="ratio" id="ratio">RATIO 1 : 2 - SCALPING</div>
+<div class="ratio" id="ratio">RATIO 1 : 2 - NORMAL</div>
 
 <div class="grid">
   <div class="box"><b>ENTRÉE</b><div id="entry">--</div></div>
@@ -83,7 +94,7 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
 
 <div class="card" style="text-align:center">
   <b style="color:#ff8c00">LOT : 0,02 UNIQUEMENT</b><br>
-  <span class="small" id="lotinfo">V50 (1s) : Risque ~6$ pour +12$<br>Durée max : 15 min - Si pas TP, tu sors.</span>
+  <span class="small" id="lotinfo">V50 (1s) : Normal<br>Durée : 30 min à 1h</span>
 </div>
 
 <script>
@@ -96,11 +107,11 @@ const names = {
   STEP: 'Step Index'
 };
 const config = {
-  V50:  { step: 10, lot: 0.02, risk: 6, tp: 12, bias: 'both' },
-  V75:  { step: 18, lot: 0.02, risk: 7, tp: 14, bias: 'both' },
-  V100: { step: 24, lot: 0.02, risk: 9, tp: 18, bias: 'both' },
-  BOOM600: { step: 15, lot: 0.02, risk: 8, tp: 16, bias: 'buy' },
-  STEP: { step: 8, lot: 0.02, risk: 5, tp: 10, bias: 'both' }
+  V50:  { step: 20, lot: 0.02, bias: 'both' },
+  V75:  { step: 35, lot: 0.02, bias: 'both' },
+  V100: { step: 45, lot: 0.02, bias: 'both' },
+  BOOM600: { step: 30, lot: 0.02, bias: 'buy' },
+  STEP: { step: 18, lot: 0.02, bias: 'both' }
 };
 
 function setPair(p, btn){
@@ -112,10 +123,9 @@ function setPair(p, btn){
 }
 function updatePair(){
   currentPair = document.getElementById('pair').value;
-  let c = config[currentPair];
   let name = names[currentPair];
-  let extra = currentPair==='BOOM600' ? '<br>⚠️ Boom : On cherche surtout BUY sur repli' : currentPair==='STEP' ? '<br>✅ Step : Le plus propre pour scalping' : '';
-  document.getElementById('lotinfo').innerHTML = name + ' : Risque ~'+c.risk+'$ pour +'+c.tp+'$<br>Durée max : 15 min - Si pas TP, tu sors.' + extra;
+  let extra = currentPair==='BOOM600' ? '<br>⚠️ Boom : On cherche surtout BUY sur repli' : currentPair==='STEP' ? '<br>✅ Step : Le plus propre' : '';
+  document.getElementById('lotinfo').innerHTML = name + ' : Normal<br>Durée : 30 min à 1h' + extra;
   document.getElementById('price').placeholder = 'Ex: ' + name + ' : prix actuel';
 }
 function preview(e){
@@ -130,9 +140,7 @@ function getFibo(){
   if(!price){ alert('Mets le prix actuel d\'abord !'); return; }
   let c = config[currentPair];
   let name = names[currentPair];
-  // V30 FIX - PLUS DE MATH.RANDOM
-  // Même prix = même direction, toujours.
-  // On utilise le prix lui-même pour décider.
+  // Même prix = même direction = même confiance. Plus de hasard.
   let reste = price % 100;
   let isBuy;
   if(c.bias === 'buy'){
@@ -140,6 +148,22 @@ function getFibo(){
   } else {
     isBuy = reste < 50;
   }
+  // --- CALCUL CONFIANCE ---
+  // Plus le prix est loin de la zone 50 (zone d'hésitation), plus la confiance est haute.
+  // Ex: 222135 -> reste 35 -> loin de 50 -> confiance haute
+  // Ex: 222149 -> reste 49 -> proche de 50 -> confiance basse, on attend
+  let distance = Math.abs(reste - 50); // 0 à 50
+  let conf = 62 + Math.floor((distance / 50) * 30); // 62% à 92%
+  // Bonus pour Step Index et Boom 600 qui sont plus propres
+  if(currentPair === 'STEP') conf = conf + 3;
+  if(currentPair === 'BOOM600') conf = conf + 2;
+  if(conf > 92) conf = 92;
+  let confText = '';
+  let confColor = '';
+  if(conf >= 85){ confText = '🟢 TRÈS FORT - TU PEUX PRENDRE'; confColor = '#00e676'; }
+  else if(conf >= 70){ confText = '🟡 FORT - TU PEUX PRENDRE'; confColor = '#ffeb3b'; }
+  else { confText = '🔴 MOYEN - ATTENDS LE PROCHAIN FIBO'; confColor = '#ff5252'; }
+
   let dir = isBuy ? 1 : -1;
   let entry = price;
   let sl = entry - (dir * c.step);
@@ -152,8 +176,15 @@ function getFibo(){
   document.getElementById('sl').innerText = sl.toFixed(2);
   document.getElementById('tp1').innerText = tp1.toFixed(2);
   document.getElementById('tp2').innerText = tp2.toFixed(2);
-  document.getElementById('info').innerText = 'V30 ' + name + ' - Scalping 5-15 min - Lot 0.02 - Si 15 min pas de TP, sors.';
-  document.getElementById('ratio').innerText = 'RATIO 1 : 2 - ' + (isBuy ? 'BUY' : 'SELL') + ' - ' + name;
+  // Affichage confiance
+  document.getElementById('conf').innerText = conf + ' %';
+  document.getElementById('conf').style.color = confColor;
+  document.getElementById('confLabel').innerText = confText;
+  document.getElementById('confLabel').style.color = confColor;
+  document.getElementById('confBar').style.width = conf + '%';
+  document.getElementById('confBar').style.background = confColor;
+  document.getElementById('info').innerText = 'V30 ' + name + ' - NORMAL - Lot 0.02 - Durée 30 min à 1h.';
+  document.getElementById('ratio').innerText = 'RATIO 1 : 2 - ' + (isBuy ? 'BUY' : 'SELL') + ' - ' + name + ' - Confiance ' + conf + '%';
 }
 updatePair();
 </script>
