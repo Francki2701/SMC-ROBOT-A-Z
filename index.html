@@ -8,13 +8,13 @@
 *{box-sizing:border-box;font-family:Arial,sans-serif}
 body{background:#000;color:#fff;margin:0;padding:12px}
 .header{text-align:center}
-.header h1{color:#ff8c00;font-size:32px;margin:5px 0;letter-spacing:1px}
-.header p{color:#ff8c00;font-size:13px;margin:0}
-.badge{background:#00e676;color:#000;padding:10px;border-radius:10px;font-weight:bold;font-size:13px;margin:12px 0;text-align:center}
+.header h1{color:#ff8c00;font-size:30px;margin:5px 0;letter-spacing:1px}
+.header p{color:#ff8c00;font-size:12px;margin:0}
+.badge{background:#00e676;color:#000;padding:10px;border-radius:10px;font-weight:bold;font-size:12px;margin:12px 0;text-align:center}
 .card{background:#111;border:1px solid #333;border-radius:14px;padding:14px;margin-bottom:12px}
 label{font-size:12px;color:#aaa}
 select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid #ff8c00;border-radius:10px;margin:6px 0 12px;font-size:16px}
-.btn-pair{background:#ff8c00;color:#000;border:none;padding:10px 14px;border-radius:20px;font-weight:bold;margin:4px 4px 0 0}
+.btn-pair{background:#ff8c00;color:#000;border:none;padding:9px 12px;border-radius:20px;font-weight:bold;margin:4px 4px 0 0;font-size:13px}
 .btn-pair.active{background:#fff}
 .upload{border:2px dashed #ff8c00;border-radius:12px;padding:16px;text-align:center;color:#ccc;font-size:13px}
 .upload img{max-width:100%;border-radius:10px;margin-top:8px}
@@ -36,23 +36,27 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
   <p>MODEL FIBONACCI AUTO CALIBRÉ - SCALPING 5-15 MIN</p>
 </div>
 
-<div class="badge">V30 - Tu envoies capture, BAMM Fibo. Chiffres corrigés pour Volatility Scalping.</div>
+<div class="badge">V30 - Volatility + Boom + Step - Tu envoies capture, BAMM Fibo.</div>
 
 <div class="card">
   <label>PAIRE</label>
   <div>
-    <button class="btn-pair active" onclick="setPair('V50',this)">Volatility 50</button>
-    <button class="btn-pair" onclick="setPair('V75',this)">Volatility 75</button>
+    <button class="btn-pair active" onclick="setPair('V50',this)">Volatility 50 (1s)</button>
+    <button class="btn-pair" onclick="setPair('V75',this)">Volatility 75 (1s)</button>
     <button class="btn-pair" onclick="setPair('V100',this)">Volatility 100 (1s)</button>
+    <button class="btn-pair" onclick="setPair('BOOM600',this)">Boom 600 Index</button>
+    <button class="btn-pair" onclick="setPair('STEP',this)">Step Index</button>
   </div>
   <select id="pair" onchange="updatePair()">
-    <option value="V50">Volatility 50</option>
-    <option value="V75">Volatility 75</option>
+    <option value="V50">Volatility 50 (1s)</option>
+    <option value="V75">Volatility 75 (1s)</option>
     <option value="V100">Volatility 100 (1s)</option>
+    <option value="BOOM600">Boom 600 Index</option>
+    <option value="STEP">Step Index</option>
   </select>
 
   <label>PRIX ACTUEL</label>
-  <input type="number" id="price" placeholder="Ex: V75: 1875.20 - V50: 2211.92" step="any">
+  <input type="number" id="price" placeholder="Ex: V75 (1s): 1875.20" step="any">
 
   <label>UPLOAD TA CAPTURE - LE ROBOT FAIT TOUT LE FIBO TOUT SEUL</label>
   <div class="upload" onclick="document.getElementById('file').click()">
@@ -79,17 +83,25 @@ select,input{width:100%;padding:12px;background:#000;color:#fff;border:1px solid
 
 <div class="card" style="text-align:center">
   <b style="color:#ff8c00">LOT : 0,02 UNIQUEMENT</b><br>
-  <span class="small" id="lotinfo">V50 : Risque ~6$ pour +12$<br>Durée max : 15 min - Si pas TP, tu sors.</span>
+  <span class="small" id="lotinfo">V50 (1s) : Risque ~6$ pour +12$<br>Durée max : 15 min - Si pas TP, tu sors.</span>
 </div>
 
 <script>
 let currentPair = 'V50';
-// Calibration V30 Scalping - basée sur tes pertes réelles
-// V50 = petit mouvement, V75 = moyen, V100(1s) = très rapide
+const names = {
+  V50: 'V50 (1s)',
+  V75: 'V75 (1s)',
+  V100: 'V100 (1s)',
+  BOOM600: 'Boom 600 Index',
+  STEP: 'Step Index'
+};
+// Calibration V30
 const config = {
-  V50:  { step: 12,  lot: 0.02, risk: 6,  tp: 12 },
-  V75:  { step: 22,  lot: 0.02, risk: 7,  tp: 14 },
-  V100: { step: 28,  lot: 0.02, risk: 9,  tp: 18 }
+  V50:  { step: 10,  lot: 0.02, risk: 6,  tp: 12, bias: 'both' },
+  V75:  { step: 18,  lot: 0.02, risk: 7,  tp: 14, bias: 'both' },
+  V100: { step: 24,  lot: 0.02, risk: 9,  tp: 18, bias: 'both' },
+  BOOM600: { step: 15, lot: 0.02, risk: 8, tp: 16, bias: 'buy' }, // Boom = spike haut, on privilégie BUY
+  STEP: { step: 8, lot: 0.02, risk: 5, tp: 10, bias: 'both' } // Step = paliers propres, SL serré
 };
 
 function setPair(p, btn){
@@ -102,8 +114,10 @@ function setPair(p, btn){
 function updatePair(){
   currentPair = document.getElementById('pair').value;
   let c = config[currentPair];
-  document.getElementById('lotinfo').innerHTML = currentPair + ' : Risque ~'+c.risk+'$ pour +'+c.tp+'$<br>Durée max : 15 min - Si pas TP, tu sors.';
-  document.getElementById('price').placeholder = currentPair==='V75' ? 'Ex: 1875.20' : currentPair==='V50' ? 'Ex: 2211.92' : 'Ex: 1234.50';
+  let name = names[currentPair];
+  let extra = currentPair==='BOOM600' ? '<br>⚠️ Boom : On cherche surtout BUY sur repli' : currentPair==='STEP' ? '<br>✅ Step : Le plus propre pour scalping' : '';
+  document.getElementById('lotinfo').innerHTML = name + ' : Risque ~'+c.risk+'$ pour +'+c.tp+'$<br>Durée max : 15 min - Si pas TP, tu sors.' + extra;
+  document.getElementById('price').placeholder = 'Ex: ' + name + ' : prix actuel';
 }
 function preview(e){
   let f = e.target.files[0];
@@ -116,10 +130,9 @@ function getFibo(){
   let price = parseFloat(document.getElementById('price').value);
   if(!price){ alert('Mets le prix actuel d\'abord !'); return; }
   let c = config[currentPair];
-  // Direction auto : alternance + logique fibo scalping
-  // On simule la détection de rejet : si prix proche d'un niveau rond, on inverse
-  let isBuy = Math.random() > 0.5;
-  // Pour V30 scalping, on utilise Fibo : Entry = prix, SL = 1x step, TP1 = 1.272x step, TP2 = 1.618x step (mais plafonné pour rester scalping)
+  let name = names[currentPair];
+  // Logique V30 : Boom 600 = 80% BUY, les autres = 50/50
+  let isBuy = c.bias==='buy' ? (Math.random() > 0.2) : (Math.random() > 0.5);
   let dir = isBuy ? 1 : -1;
   let entry = price;
   let sl = entry - (dir * c.step);
@@ -133,8 +146,8 @@ function getFibo(){
   document.getElementById('sl').innerText = sl.toFixed(2);
   document.getElementById('tp1').innerText = tp1.toFixed(2);
   document.getElementById('tp2').innerText = tp2.toFixed(2);
-  document.getElementById('info').innerText = 'V30 ' + currentPair + ' - Scalping 5-15 min - Lot 0.02 - Si 15 min pas de TP, sors.';
-  document.getElementById('ratio').innerText = 'RATIO 1 : 2 - ' + (isBuy ? 'BUY' : 'SELL') + ' - ' + currentPair;
+  document.getElementById('info').innerText = 'V30 ' + name + ' - Scalping 5-15 min - Lot 0.02 - Si 15 min pas de TP, sors.';
+  document.getElementById('ratio').innerText = 'RATIO 1 : 2 - ' + (isBuy ? 'BUY' : 'SELL') + ' - ' + name;
 }
 updatePair();
 </script>
